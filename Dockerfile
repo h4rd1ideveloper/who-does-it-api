@@ -1,0 +1,24 @@
+FROM node:22-alpine
+
+WORKDIR /app
+
+# Copiar arquivos de dependências
+COPY package*.json ./
+
+# Instalar dependências
+RUN npm install
+
+# Copiar o restante dos arquivos
+COPY . .
+
+# Gerar o Prisma Client
+RUN npx prisma generate
+
+# Compilar a aplicação
+RUN npm run build
+
+# Expor a porta
+EXPOSE 3000
+
+# Comando para iniciar a aplicação
+CMD ["npm", "run", "start:prod"]

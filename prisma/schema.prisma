@@ -1,0 +1,151 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelo de Usuário (admin e prestadores)
+model Usuario {
+  id            Int         @id @default(autoincrement())
+  nome          String
+  email         String      @unique
+  senha_hash    String
+  tipo_usuario  TipoUsuario
+  token_convite String?
+  data_criacao  DateTime    @default(now())
+
+  // Relacionamento com prestador
+  prestador Prestador?
+
+  @@map("usuarios")
+}
+
+// Modelo de Prestador
+model Prestador {
+  id                    Int      @id
+  cpf_cnpj              String?
+  telefone              String
+  endereco              String
+  cidade                String
+  estado                String
+  cep                   String
+  atende_domicilio      Boolean  @default(false)
+  horario_funcionamento String?
+  foto_url              String?
+  is_ativo              Boolean  @default(true)
+  data_cadastro         DateTime @default(now())
+
+  // Relacionamentos
+  usuario    Usuario           @relation(fields: [id], references: [id])
+  servicos   Servico[]
+  avaliacoes Avaliacao[]
+  visitas    VisitaPrestador[]
+  cliques    CliqueContato[]
+
+  @@map("prestadores")
+}
+
+// Modelo de Categoria
+model Categoria {
+  id         Int     @id @default(autoincrement())
+  nome       String  @unique
+  slug       String  @unique
+  imagem_url String?
+
+  // Relacionamentos
+  servicos Servico[]
+
+  @@map("categorias")
+}
+
+// Modelo de Serviço
+model Servico {
+  id                Int              @id @default(autoincrement())
+  prestador_id      Int
+  categoria_id      Int
+  titulo            String
+  descricao         String
+  preco_min         Float
+  preco_max         Float?
+  tempo_estimado    String
+  local_atendimento LocalAtendimento
+  fotos_urls        String? // Armazenado como JSON string
+
+  // Relacionamentos
+  prestador Prestador @relation(fields: [prestador_id], references: [id])
+  categoria Categoria @relation(fields: [categoria_id], references: [id])
+
+  @@map("servicos")
+}
+
+// Modelo de Avaliação
+model Avaliacao {
+  id           Int      @id @default(autoincrement())
+  prestador_id Int
+  nome_cliente String
+  nota         Int
+  comentario   String?
+  data_hora    DateTime @default(now())
+
+  // Relacionamentos
+  prestador Prestador @relation(fields: [prestador_id], references: [id])
+
+  @@map("avaliacoes")
+}
+
+// Modelo de Visita ao Prestador
+model VisitaPrestador {
+  id           Int          @id @default(autoincrement())
+  prestador_id Int
+  data_hora    DateTime     @default(now())
+  origem       OrigemVisita
+
+  // Relacionamentos
+  prestador Prestador @relation(fields: [prestador_id], references: [id])
+
+  @@map("visitas_prestador")
+}
+
+// Modelo de Clique em Contato
+model CliqueContato {
+  id           Int         @id @default(autoincrement())
+  prestador_id Int
+  tipo_contato TipoContato
+  data_hora    DateTime    @default(now())
+
+  // Relacionamentos
+  prestador Prestador @relation(fields: [prestador_id], references: [id])
+
+  @@map("cliques_contato")
+}
+
+// Enums
+enum TipoUsuario {
+  admin
+  prestador
+}
+
+enum LocalAtendimento {
+  oficina
+  domicilio
+  ambos
+}
+
+enum OrigemVisita {
+  busca
+  categoria
+  home
+  destaque
+}
+
+enum TipoContato {
+  whatsapp
+  email
+  telefone
+}
