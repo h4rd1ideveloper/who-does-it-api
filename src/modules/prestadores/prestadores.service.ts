@@ -14,20 +14,15 @@ export class PrestadoresService {
   constructor(private prisma: PrismaService) {}
 
   validarToken(token: string) {
-    // Em um ambiente real, verificaríamos se o token existe e não expirou
     if (!token || token.length < 5) {
       throw new BadRequestException('Token inválido ou expirado');
     }
-
-    // Simulando validação de token
     return { valid: true };
   }
 
   async cadastrarPrestador(data: CreatePrestadorDto) {
-    // Validar token
     this.validarToken(data.token);
 
-    // Verificar se endereço eletrónico já existe
     const emailExistente = await this.prisma.usuario.findUnique({
       where: { email: data.email },
     });
@@ -36,12 +31,9 @@ export class PrestadoresService {
       throw new ConflictException('Email já cadastrado');
     }
 
-    // Hash da senha
     const senhaHash = await bcrypt.hash(data.senha, 10);
 
-    // Criar usuário e prestador em uma transação
     const result = await this.prisma.$transaction(async (prisma) => {
-      // Criar usuário
       const usuario = await prisma.usuario.create({
         data: {
           nome: data.nome,
@@ -51,7 +43,6 @@ export class PrestadoresService {
         },
       });
 
-      // Criar prestador
       const prestador = await prisma.prestador.create({
         data: {
           id: usuario.id,
@@ -68,7 +59,6 @@ export class PrestadoresService {
         },
       });
 
-      // Criar serviços iniciais, se fornecidos
       if (data.servicos && data.servicos.length > 0) {
         for (const servico of data.servicos) {
           await prisma.servico.create({
@@ -80,7 +70,7 @@ export class PrestadoresService {
               preco_min: servico.preco_min,
               preco_max: servico.preco_max,
               tempo_estimado: servico.tempo_estimado,
-              local_atendimento: servico.local_atendimento,
+              local_atendimento: servico.local_atendimento as LocalAtendimento,
               fotos_urls: servico.fotos_urls
                 ? JSON.stringify(servico.fotos_urls)
                 : null,
@@ -104,28 +94,23 @@ export class PrestadoresService {
     cidade: string,
     ordenarPor: string,
   ) {
-    // Construir filtros
-    const where: Prisma.PrestadorWhereInput = {};
+    const where: {
+      [key: string]: any;
+    } = {};
 
     if (query) {
       where.OR = [
         {
           servicos: {
             some: {
-              titulo: {
-                contains: query,
-                mode: 'insensitive',
-              },
+              titulo: { contains: query, mode: 'insensitive' },
             },
           },
         },
         {
           servicos: {
             some: {
-              descricao: {
-                contains: query,
-                mode: 'insensitive',
-              },
+              descricao: { contains: query, mode: 'insensitive' },
             },
           },
         },
@@ -134,73 +119,48 @@ export class PrestadoresService {
 
     if (categoria) {
       where.servicos = {
-        some: {
-          categoria: {
-            slug: categoria,
-          },
-        },
+        some: { categoria: { slug: categoria } },
       };
     }
 
     if (cidade) {
-      where.cidade = {
-        contains: cidade,
-        mode: 'insensitive',
-      };
+      where.cidade = { contains: cidade, mode: 'insensitive' };
     }
 
-    // Definir ordenação
-    let orderBy: any = {};
+    let orderBy = {};
 
     switch (ordenarPor) {
       case 'mais_visitados':
-        // Em um ambiente real, faríamos um cálculo mais complexo
-        orderBy = { id: 'asc' }; // Simulação
-        break;
       case 'melhor_avaliados':
-        // Em um ambiente real, faríamos um cálculo de média
-        orderBy = { id: 'asc' }; // Simulação
-        break;
       case 'menor_preco':
-        // Em um ambiente real, faríamos um cálculo de preço médio
         orderBy = { id: 'asc' }; // Simulação
         break;
       default:
-        // Ordenação padrão por score
-        orderBy = { id: 'asc' }; // Simulação
+        orderBy = { id: 'asc' }; // Padrão
     }
 
-    // Buscar prestadores
     const prestadores = await this.prisma.prestador.findMany({
       where,
       include: {
         usuario: true,
-        servicos: {
-          include: {
-            categoria: true,
-          },
-        },
+        servicos: { include: { categoria: true } },
         avaliacoes: true,
       },
       orderBy,
     });
 
-    // Formatar resultado
     return prestadores.map((prestador) => {
-      // Calcular nota média
       const notaMedia =
         prestador.avaliacoes.length > 0
           ? prestador.avaliacoes.reduce((acc, curr) => acc + curr.nota, 0) /
             prestador.avaliacoes.length
           : 0;
 
-      // Encontrar preço mínimo entre todos os serviços
       const precoMin =
         prestador.servicos.length > 0
           ? Math.min(...prestador.servicos.map((s) => s.preco_min))
           : null;
 
-      // Encontrar preço máximo entre todos os serviços
       const precoMax =
         prestador.servicos.length > 0
           ? Math.max(
@@ -208,7 +168,6 @@ export class PrestadoresService {
             )
           : null;
 
-      // Extrair local de atendimento predominante
       const localAtendimento =
         prestador.servicos.length > 0
           ? prestador.servicos[0].local_atendimento
@@ -234,16 +193,8 @@ export class PrestadoresService {
       where: { id },
       include: {
         usuario: true,
-        servicos: {
-          include: {
-            categoria: true,
-          },
-        },
-        avaliacoes: {
-          orderBy: {
-            data_hora: 'desc',
-          },
-        },
+        servicos: { include: { categoria: true } },
+        avaliacoes: { orderBy: { data_hora: 'desc' } },
       },
     });
 
@@ -251,31 +202,30 @@ export class PrestadoresService {
       throw new NotFoundException('Prestador não encontrado');
     }
 
-    // Calcular nota média
     const notaMedia =
       prestador.avaliacoes.length > 0
         ? prestador.avaliacoes.reduce((acc, curr) => acc + curr.nota, 0) /
           prestador.avaliacoes.length
         : 0;
 
-    // Formatar serviços
-    const servicos = prestador.servicos.map((servico) => ({
-      id: servico.id,
-      categoria: {
-        id: servico.categoria.id,
-        nome: servico.categoria.nome,
-        slug: servico.categoria.slug,
-      },
-      titulo: servico.titulo,
-      descricao: servico.descricao,
-      preco_min: servico.preco_min,
-      preco_max: servico.preco_max,
-      tempo_estimado: servico.tempo_estimado,
-      local_atendimento: servico.local_atendimento,
-      fotos_urls: servico.fotos_urls ? JSON.parse(servico.fotos_urls) : [],
-    }));
+    const servicos = prestador.servicos.map((servico) => {
+      return {
+        id: servico.id,
+        categoria: {
+          id: servico.categoria.id,
+          nome: servico.categoria.nome,
+          slug: servico.categoria.slug,
+        },
+        titulo: servico.titulo,
+        descricao: servico.descricao,
+        preco_min: servico.preco_min,
+        preco_max: servico.preco_max,
+        tempo_estimado: servico.tempo_estimado,
+        local_atendimento: servico.local_atendimento,
+        fotos_urls: servico.fotos_urls,
+      };
+    });
 
-    // Formatar avaliações
     const avaliacoes = prestador.avaliacoes.map((avaliacao) => ({
       nome_cliente: avaliacao.nome_cliente,
       nota: avaliacao.nota,
@@ -283,12 +233,11 @@ export class PrestadoresService {
       data_hora: avaliacao.data_hora.toISOString(),
     }));
 
-    // Formatar contatos
     const contatos = {
       whatsapp: prestador.telefone,
       email: prestador.usuario.email,
       telefone: prestador.telefone,
-      site_externo: null, // Não implementado no MVP
+      site_externo: null,
     };
 
     return {
@@ -297,7 +246,7 @@ export class PrestadoresService {
       foto_url: prestador.foto_url,
       nota_media: parseFloat(notaMedia.toFixed(1)),
       total_avaliacoes: prestador.avaliacoes.length,
-      descricao: '', // Não implementado no MVP
+      descricao: '',
       endereco: prestador.endereco,
       cidade: prestador.cidade,
       estado: prestador.estado,
@@ -310,13 +259,9 @@ export class PrestadoresService {
     };
   }
 
-  async obterMetricasVisitas(prestadorId: number, periodo: number) {
-    // Em um ambiente real, faríamos uma consulta mais complexa
-    // para obter as visitas agrupadas por dia
-
-    // Simulando o resultado esperado
+  obterMetricasVisitas(prestadorId: number, periodo: number) {
     const hoje = new Date();
-    const resultado = [];
+    const resultado: { data: string; total_visitas: number }[] = [];
 
     for (let i = 0; i < periodo; i++) {
       const data = new Date(hoje);
@@ -324,20 +269,20 @@ export class PrestadoresService {
 
       resultado.push({
         data: data.toISOString().split('T')[0],
-        total_visitas: Math.floor(Math.random() * 20) + 1, // Simulação
+        total_visitas: Math.floor(Math.random() * 20) + 1,
       });
     }
 
-    return resultado.reverse(); // Ordenar do mais antigo para o mais recente
+    return resultado.reverse();
   }
 
-  async obterMetricasCliques(prestadorId: number, periodo: number) {
-    // Em um ambiente real, faríamos uma consulta mais complexa
-    // para obter os cliques agrupados por dia e tipo
-
-    // Simulando o resultado esperado
+  obterMetricasCliques(prestadorId: number, periodo: number) {
     const hoje = new Date();
-    const resultado = [];
+    const resultado: {
+      data: string;
+      tipo_contato: string;
+      total_cliques: number;
+    }[] = [];
     const tiposContato = ['whatsapp', 'email', 'telefone'];
 
     for (let i = 0; i < periodo; i++) {
@@ -348,11 +293,11 @@ export class PrestadoresService {
         resultado.push({
           data: data.toISOString().split('T')[0],
           tipo_contato: tipo,
-          total_cliques: Math.floor(Math.random() * 10) + 1, // Simulação
+          total_cliques: Math.floor(Math.random() * 10) + 1,
         });
       }
     }
 
-    return resultado.reverse(); // Ordenar do mais antigo para o mais recente
+    return resultado.reverse();
   }
 }
