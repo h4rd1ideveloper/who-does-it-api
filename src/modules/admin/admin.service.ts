@@ -3,10 +3,15 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
 import { add } from 'date-fns';
+import { InjectRepository } from '@nestjs/typeorm';
+import { ServiceProvider } from '../database/entities/service-provider.entity';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class AdminService {
   constructor(
+    @InjectRepository(ServiceProvider)
+    private readonly serviceProvider: Repository<ServiceProvider>,
     private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}

@@ -4,10 +4,14 @@ import { AdminService } from './admin.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServiceProvider } from '../database/entities/service-provider.entity';
+import { ServiceProviderVisit } from '../database/entities/service-provider-visit.entity';
+import { ContactClick } from '../database/entities/contact-click.entity';
 
 @Module({
   imports: [
-    PrismaModule,
+    TypeOrmModule.forFeature([ServiceProvider,ServiceProviderVisit,ContactClick]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
