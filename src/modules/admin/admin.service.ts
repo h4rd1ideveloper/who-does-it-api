@@ -1,26 +1,36 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
 import { add } from 'date-fns';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceProvider } from '../database/entities/service-provider.entity';
 import { Repository } from 'typeorm';
-
+import { ServiceProviderVisit } from '../database/entities/service-provider-visit.entity';
+import { ContactClick } from '../database/entities/contact-click.entity';
+import { Category } from '../database/entities/category.entity';
 @Injectable()
 export class AdminService {
   constructor(
     @InjectRepository(ServiceProvider)
-    private readonly serviceProvider: Repository<ServiceProvider>,
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly serviceProviderRepo: Repository<ServiceProvider>,
+
+    @InjectRepository(ServiceProviderVisit)
+    private readonly visitRepo: Repository<ServiceProviderVisit>,
+
+    @InjectRepository(ContactClick)
+    private readonly clickRepo: Repository<ContactClick>,
+
+    @InjectRepository(Category)
+    private readonly categoryRepo: Repository<Category>,
+
+    private readonly jwtService: JwtService,
   ) {}
 
   gerarTokenConvite(validadeDias: number) {
     const token = v4();
     const dataExpiracao = add(new Date(), { days: validadeDias });
 
-    // Em um ambiente real, salvaríamos o token em uma tabela específica
+    // Em um ambiente real, salvaríamos o ‘token’ numa tabela específica
     // ou atualizaríamos um registro existente
 
     return {
@@ -30,9 +40,9 @@ export class AdminService {
   }
 
   async getEstatisticasGerais() {
-    const totalPrestadores = await this.prisma.prestador.count();
-    const totalVisitas = await this.prisma.visitaPrestador.count();
-    const totalCliques = await this.prisma.cliqueContato.count();
+    const totalPrestadores = await this.serviceProviderRepo.count();
+    const totalVisitas = await this.visitRepo.count();
+    const totalCliques = await this.clickRepo.count();
 
     return {
       total_prestadores: totalPrestadores,
@@ -42,48 +52,37 @@ export class AdminService {
   }
 
   async getTopCategorias(periodo: number) {
-    // Em um ambiente real, faríamos uma consulta mais complexa
-    // para obter as categorias mais visitadas
     const dataLimite = add(new Date(), { days: -periodo });
 
-    // Esta é uma consulta simplificada que não reflete a implementação real
-    // que exigiria joins e agrupamentos mais complexos
-    const categorias = await this.prisma.categoria.findMany({
+    // Consulta simplificada: ordena pela data de criação ou ‘id’
+    const categorias = await this.categoryRepo.find({
       take: 5,
-      orderBy: {
-        id: 'asc', // Em um ambiente real, seria ordenado por contagem de visitas
-      },
+      order: { id: 'ASC' },
     });
 
-    // Simulando o resultado esperado
+    // Simulação de visitas
     return categorias.map((categoria) => ({
       categoria_id: categoria.id,
-      nome: categoria.nome,
-      total_visitas: Math.floor(Math.random() * 100) + 20, // Simulação
+      nome: categoria.name,
+      total_visitas: Math.floor(Math.random() * 100) + 20,
     }));
   }
 
   async getTopPrestadores(periodo: number) {
-    // Em um ambiente real, faríamos uma consulta mais complexa
-    // para obter os prestadores mais visitados
     const dataLimite = add(new Date(), { days: -periodo });
 
-    // Esta é uma consulta simplificada que não reflete a implementação real
-    const prestadores = await this.prisma.prestador.findMany({
+    // Busca prestadores com relação ao utilizador
+    const prestadores = await this.serviceProviderRepo.find({
       take: 5,
-      include: {
-        usuario: true,
-      },
-      orderBy: {
-        id: 'asc', // Em um ambiente real, seria ordenado por contagem de visitas
-      },
+      relations: ['user'],
+      order: { id: 'ASC' },
     });
 
-    // Simulando o resultado esperado
+    // Simulação de visitas
     return prestadores.map((prestador) => ({
       prestador_id: prestador.id,
-      nome: prestador.usuario.nome,
-      total_visitas: Math.floor(Math.random() * 50) + 10, // Simulação
+      nome: prestador.user.name,
+      total_visitas: Math.floor(Math.random() * 50) + 10,
     }));
   }
 }

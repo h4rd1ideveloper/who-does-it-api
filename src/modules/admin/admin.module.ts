@@ -8,10 +8,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceProvider } from '../database/entities/service-provider.entity';
 import { ServiceProviderVisit } from '../database/entities/service-provider-visit.entity';
 import { ContactClick } from '../database/entities/contact-click.entity';
+import { Category } from '../database/entities/category.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ServiceProvider,ServiceProviderVisit,ContactClick]),
+    TypeOrmModule.forFeature([ServiceProvider,ServiceProviderVisit,ContactClick,Category]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
