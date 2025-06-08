@@ -1,28 +1,28 @@
 export {}; // garante que o arquivo seja módulo, para não conflitar
 
 declare global {
-  enum TipoUsuario {
-    admin = 'admin',
-    prestador = 'prestador',
+  enum UserType {
+    ADMIN = 'admin',
+    SERVICE_PROVIDER = 'prestador',
   }
 
-  enum LocalAtendimento {
-    oficina = 'oficina',
-    domicilio = 'domicilio',
-    ambos = 'ambos',
+  enum ServiceLocation {
+    WORKSHOP = 'oficina',
+    HOME = 'domicilio',
+    BOTH = 'ambos',
   }
 
-  enum OrigemVisita {
-    busca = 'busca',
-    categoria = 'categoria',
-    home = 'home',
-    destaque = 'destaque',
+  enum VisitOrigin {
+    SEARCH = 'busca',
+    CATEGORY = 'categoria',
+    HOME = 'home',
+    FEATURED = 'destaque',
   }
 
-  enum TipoContato {
-    whatsapp = 'whatsapp',
-    email = 'email',
-    telefone = 'telefone',
+  enum ContactType {
+    WHATSAPP = 'whatsapp',
+    EMAIL = 'email',
+    PHONE = 'telefone',
   }
 
   interface Usuario {
@@ -109,5 +109,27 @@ declare global {
     data_hora: Date;
 
     prestador: Prestador;
+  }
+
+  interface JwtPayload {
+    sub: number; // id do usuário
+    email: string;
+    iat?: number; // opcional: issued at
+    exp?: number; // opcional: expiration
+    // ... qualquer outro claim
+  }
+  /**
+   * Interface que descreve o objeto `user` retornado pelo JwtStrategy.validate()
+   */
+  interface JwtUser {
+    id: number;
+    email: string;
+    tipo_usuario: string;
+  }
+  /**
+   * Extensão de Express.Request para incluir o usuário tipado
+   */
+  interface AuthRequest extends Request {
+    user: JwtUser;
   }
 }

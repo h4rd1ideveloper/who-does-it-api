@@ -25,7 +25,11 @@ export class AuthService {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    return { id: usuario.id, email: usuario.email, tipo_usuario: usuario.tipo_usuario };
+    return {
+      id: usuario.id,
+      email: usuario.email,
+      tipo_usuario: usuario.tipo_usuario,
+    };
   }
 
   async validatePrestador(email: string, senha: string) {
@@ -50,17 +54,21 @@ export class AuthService {
       throw new UnauthorizedException('Prestador inativo ou não encontrado');
     }
 
-    return { 
-      id: usuario.id, 
-      email: usuario.email, 
+    return {
+      id: usuario.id,
+      email: usuario.email,
       tipo_usuario: usuario.tipo_usuario,
-      prestador_id: prestador.id
+      prestador_id: prestador.id,
     };
   }
 
   async loginAdmin(email: string, senha: string) {
     const usuario = await this.validateAdmin(email, senha);
-    const payload = { sub: usuario.id, email: usuario.email, tipo: usuario.tipo_usuario };
+    const payload = {
+      sub: usuario.id,
+      email: usuario.email,
+      tipo: usuario.tipo_usuario,
+    };
     return {
       token: this.jwtService.sign(payload),
     };
@@ -68,10 +76,14 @@ export class AuthService {
 
   async loginPrestador(email: string, senha: string) {
     const usuario = await this.validatePrestador(email, senha);
-    const payload = { sub: usuario.id, email: usuario.email, tipo: usuario.tipo_usuario };
+    const payload = {
+      sub: usuario.id,
+      email: usuario.email,
+      tipo: usuario.tipo_usuario,
+    };
     return {
       token: this.jwtService.sign(payload),
-      prestador_id: usuario.prestador_id
+      prestador_id: usuario.prestador_id,
     };
   }
 }

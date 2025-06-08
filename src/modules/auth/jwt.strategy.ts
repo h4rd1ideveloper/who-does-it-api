@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
+import { ExtractJwt, Strategy, StrategyOptions } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -11,16 +10,23 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
-    super({
+    const secret = configService.get<string>('JWT_SECRET')!;
+    if (!secret) {
+      throw new Error('JWT_SECRET não definido no .env');
+    }
+
+    const opts: StrategyOptions = {
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
-    });
+      secretOrKey: secret,
+    };
+
+    super(opts);
   }
 
-  async validate(payload: any) {
+  async validate({ sub }: JwtPayload) {
     const usuario = await this.prisma.usuario.findUnique({
-      where: { id: payload.sub },
+      where: { id: sub },
     });
 
     if (!usuario) {

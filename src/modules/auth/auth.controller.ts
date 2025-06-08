@@ -10,20 +10,23 @@ class LoginDto {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('admin/login')
-  async loginAdmin(@Body() loginDto: LoginDto) {
+  @Post('admin/login') async loginAdmin(@Body() loginDto: LoginDto) {
     try {
       return await this.authService.loginAdmin(loginDto.email, loginDto.senha);
     } catch (error) {
+      console.log(error);
       throw new UnauthorizedException('Credenciais inválidas');
     }
   }
 
-  @Post('prestador/login')
-  async loginPrestador(@Body() loginDto: LoginDto) {
+  @Post('prestador/login') async loginPrestador(@Body() loginDto: LoginDto) {
     try {
-      return await this.authService.loginPrestador(loginDto.email, loginDto.senha);
+      return await this.authService.loginPrestador(
+        loginDto.email,
+        loginDto.senha,
+      );
     } catch (error) {
+      console.log(error);
       throw new UnauthorizedException('Credenciais inválidas');
     }
   }
