@@ -7,10 +7,10 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { CreatePrestadorDto } from './create-prestador.dto';
-import { Prisma } from '@prisma/client';
+
 
 @Injectable()
-export class PrestadoresService {
+export class ServiceProviderService {
   constructor(private prisma: PrismaService) {}
 
   validarToken(token: string) {
@@ -70,7 +70,7 @@ export class PrestadoresService {
               preco_min: servico.preco_min,
               preco_max: servico.preco_max,
               tempo_estimado: servico.tempo_estimado,
-              local_atendimento: servico.local_atendimento as LocalAtendimento,
+              local_atendimento: servico.local_atendimento as ServiceLocation,
               fotos_urls: servico.fotos_urls
                 ? JSON.stringify(servico.fotos_urls)
                 : null,

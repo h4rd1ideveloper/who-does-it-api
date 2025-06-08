@@ -1,12 +1,12 @@
 import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
-import { PrestadoresService } from './prestadores.service';
+import { ServiceProviderService } from './service-provider.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 
 @Controller()
 export class PrestadoresController {
-  constructor(private readonly prestadoresService: PrestadoresService) {}
+  constructor(private readonly prestadoresService: ServiceProviderService) {}
 
   @Get('prestadores/validar-token')
   async validarToken(@Query('token') token: string) {
