@@ -1,18 +1,18 @@
 import { CreateServiceDto } from './create-service.dto';
 
-export class CreatePrestadorDto {
+export class CreateServiceProviderDto {
   token: string;
-  nome: string;
+  name: string;
   email: string;
-  senha: string;
-  cpf_cnpj: string;
-  telefone: string;
-  endereco: string;
-  cidade: string;
-  estado: string;
-  cep: string;
-  atende_domicilio: boolean;
-  horario_funcionamento: string;
-  foto_url?: string;
-  servicos?: CreateServiceDto[];
+  password: string;
+  cpfCnpj: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  homeService: boolean;
+  businessHours: string;
+  photoUrl?: string;
+  services?: CreateServiceDto[];
 }

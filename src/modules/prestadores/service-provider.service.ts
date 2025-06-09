@@ -6,298 +6,267 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { CreatePrestadorDto } from './create-prestador.dto';
-
+import { CreateServiceProviderDto } from './create-prestador.dto';
+import { ServiceProvider } from '../database/entities/service-provider.entity';
+import { User } from '../database/entities/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Service } from '../database/entities/service.entity';
+import { Category } from '../database/entities/category.entity';
+import { Review } from '../database/entities/review.entity';
 
 @Injectable()
 export class ServiceProviderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(ServiceProvider)
+    private readonly providerRepository: Repository<ServiceProvider>,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(Service)
+    private readonly serviceRepository: Repository<Service>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
+  ) {}
 
-  validarToken(token: string) {
+  validateToken(token: string) {
     if (!token || token.length < 5) {
-      throw new BadRequestException('Token inválido ou expirado');
+      throw new BadRequestException('Invalid or expired token');
     }
     return { valid: true };
   }
 
-  async cadastrarPrestador(data: CreatePrestadorDto) {
-    this.validarToken(data.token);
+  async register(data: CreateServiceProviderDto) {
+    this.validateToken(data.token);
 
-    const emailExistente = await this.prisma.usuario.findUnique({
+    const existingUser = await this.userRepository.findOne({
       where: { email: data.email },
     });
 
-    if (emailExistente) {
-      throw new ConflictException('Email já cadastrado');
+    if (existingUser) {
+      throw new ConflictException('Email already registered');
     }
 
-    const senhaHash = await bcrypt.hash(data.senha, 10);
+    const passwordHash = await bcrypt.hash(data.password, 10);
 
-    const result = await this.prisma.$transaction(async (prisma) => {
-      const usuario = await prisma.usuario.create({
-        data: {
-          nome: data.nome,
-          email: data.email,
-          senha_hash: senhaHash,
-          tipo_usuario: 'prestador',
-        },
-      });
-
-      const prestador = await prisma.prestador.create({
-        data: {
-          id: usuario.id,
-          cpf_cnpj: data.cpf_cnpj,
-          telefone: data.telefone,
-          endereco: data.endereco,
-          cidade: data.cidade,
-          estado: data.estado,
-          cep: data.cep,
-          atende_domicilio: data.atende_domicilio,
-          horario_funcionamento: data.horario_funcionamento,
-          foto_url: data.foto_url,
-          is_ativo: true,
-        },
-      });
-
-      if (data.servicos && data.servicos.length > 0) {
-        for (const servico of data.servicos) {
-          await prisma.servico.create({
-            data: {
-              prestador_id: prestador.id,
-              categoria_id: servico.categoria_id,
-              titulo: servico.titulo,
-              descricao: servico.descricao,
-              preco_min: servico.preco_min,
-              preco_max: servico.preco_max,
-              tempo_estimado: servico.tempo_estimado,
-              local_atendimento: servico.local_atendimento as ServiceLocation,
-              fotos_urls: servico.fotos_urls
-                ? JSON.stringify(servico.fotos_urls)
-                : null,
-            },
-          });
-        }
-      }
-
-      return { id_prestador: prestador.id };
+    const user = this.userRepository.create({
+      name: data.name,
+      email: data.email,
+      passwordHash,
+      userType: 'prestador' as UserType,
     });
 
+    const savedUser = await this.userRepository.save(user);
+
+    const provider = this.providerRepository.create({
+      id: savedUser.id,
+      cpfCnpj: data.cpfCnpj,
+      phone: data.phone,
+      address: data.address,
+      city: data.city,
+      state: data.state,
+      zipCode: data.zipCode,
+      homeService: data.homeService,
+      businessHours: data.businessHours,
+      photoUrl: data.photoUrl,
+      isActive: true,
+    });
+
+    const savedProvider = await this.providerRepository.save(provider);
+
+    if (data.services && data.services.length > 0) {
+      for (const serviceData of data.services) {
+        const service = this.serviceRepository.create({
+          serviceProviderId: savedProvider.id,
+          categoryId: serviceData.categoryId,
+          title: serviceData.title,
+          description: serviceData.description,
+          priceMin: serviceData.priceMin,
+          priceMax: serviceData.priceMax,
+          estimatedTime: serviceData.estimatedTime,
+          serviceLocation: serviceData.serviceLocation as ServiceLocation,
+          photoUrls: serviceData.photoUrls
+            ? JSON.stringify(serviceData.photoUrls)
+            : '',
+        });
+        await this.serviceRepository.save(service);
+      }
+    }
+
     return {
-      id_prestador: result.id_prestador,
-      message: 'Cadastro realizado com sucesso',
+      providerId: savedProvider.id,
+      message: 'Registration successful',
     };
   }
 
-  async buscarPrestadores(
-    query: string,
-    categoria: string,
-    cidade: string,
-    ordenarPor: string,
+  async searchProviders(
+    query?: string,
+    categorySlug?: string,
+    city?: string,
+    orderBy?: string,
   ) {
-    const where: {
-      [key: string]: any;
-    } = {};
+    let qb = this.providerRepository
+      .createQueryBuilder('provider')
+      .leftJoinAndSelect('provider.user', 'user')
+      .leftJoinAndSelect('provider.services', 'service')
+      .leftJoinAndSelect('provider.reviews', 'review')
+      .leftJoinAndSelect('service.category', 'category')
+      .where('provider.isActive = true');
 
     if (query) {
-      where.OR = [
-        {
-          servicos: {
-            some: {
-              titulo: { contains: query, mode: 'insensitive' },
-            },
-          },
-        },
-        {
-          servicos: {
-            some: {
-              descricao: { contains: query, mode: 'insensitive' },
-            },
-          },
-        },
-      ];
+      qb = qb.andWhere(
+        '(service.title ILIKE :query OR service.description ILIKE :query)',
+        { query: `%${query}%` },
+      );
     }
 
-    if (categoria) {
-      where.servicos = {
-        some: { categoria: { slug: categoria } },
-      };
+    if (categorySlug) {
+      qb = qb.andWhere('category.slug = :slug', { slug: categorySlug });
     }
 
-    if (cidade) {
-      where.cidade = { contains: cidade, mode: 'insensitive' };
+    if (city) {
+      qb = qb.andWhere('provider.city ILIKE :city', { city: `%${city}%` });
     }
 
-    let orderBy = {};
-
-    switch (ordenarPor) {
-      case 'mais_visitados':
-      case 'melhor_avaliados':
-      case 'menor_preco':
-        orderBy = { id: 'asc' }; // Simulação
-        break;
-      default:
-        orderBy = { id: 'asc' }; // Padrão
+    if (
+      orderBy === 'most_visited' ||
+      orderBy === 'best_rated' ||
+      orderBy === 'lowest_price'
+    ) {
+      qb = qb.orderBy('provider.id', 'ASC'); // Placeholder logic
+    } else {
+      qb = qb.orderBy('provider.id', 'ASC');
     }
 
-    const prestadores = await this.prisma.prestador.findMany({
-      where,
-      include: {
-        usuario: true,
-        servicos: { include: { categoria: true } },
-        avaliacoes: true,
-      },
-      orderBy,
-    });
+    const providers = await qb.getMany();
 
-    return prestadores.map((prestador) => {
-      const notaMedia =
-        prestador.avaliacoes.length > 0
-          ? prestador.avaliacoes.reduce((acc, curr) => acc + curr.nota, 0) /
-            prestador.avaliacoes.length
+    return providers.map((provider) => {
+      const averageRating =
+        provider.reviews.length > 0
+          ? provider.reviews.reduce((acc, curr) => acc + curr.rating, 0) /
+            provider.reviews.length
           : 0;
 
-      const precoMin =
-        prestador.servicos.length > 0
-          ? Math.min(...prestador.servicos.map((s) => s.preco_min))
-          : null;
-
-      const precoMax =
-        prestador.servicos.length > 0
-          ? Math.max(
-              ...prestador.servicos.map((s) => s.preco_max || s.preco_min),
-            )
-          : null;
-
-      const localAtendimento =
-        prestador.servicos.length > 0
-          ? prestador.servicos[0].local_atendimento
-          : null;
+      const prices = provider.services
+        .map((s) => [s.priceMin, s.priceMax ?? s.priceMin])
+        .flat();
+      const priceMin = prices.length ? Math.min(...prices) : null;
+      const priceMax = prices.length ? Math.max(...prices) : null;
 
       return {
-        prestador_id: prestador.id,
-        nome: prestador.usuario.nome,
-        foto_url: prestador.foto_url,
-        nota_media: parseFloat(notaMedia.toFixed(1)),
-        total_avaliacoes: prestador.avaliacoes.length,
-        preco_min: precoMin,
-        preco_max: precoMax,
-        slogan:
-          prestador.servicos.length > 0 ? prestador.servicos[0].titulo : '',
-        local_atendimento: localAtendimento,
+        providerId: provider.id,
+        name: provider.user.name,
+        photoUrl: provider.photoUrl,
+        averageRating: +averageRating.toFixed(1),
+        totalReviews: provider.reviews.length,
+        priceMin,
+        priceMax,
+        slogan: provider.services[0]?.title ?? '',
+        serviceLocation: provider.services[0]?.serviceLocation ?? null,
       };
     });
   }
 
-  async obterPerfilPrestador(id: number) {
-    const prestador = await this.prisma.prestador.findUnique({
+  async getProviderProfile(id: number) {
+    const provider = await this.providerRepository.findOne({
       where: { id },
-      include: {
-        usuario: true,
-        servicos: { include: { categoria: true } },
-        avaliacoes: { orderBy: { data_hora: 'desc' } },
-      },
+      relations: ['user', 'services', 'services.category', 'reviews'],
     });
 
-    if (!prestador) {
-      throw new NotFoundException('Prestador não encontrado');
+    if (!provider) {
+      throw new NotFoundException('Service provider not found');
     }
 
-    const notaMedia =
-      prestador.avaliacoes.length > 0
-        ? prestador.avaliacoes.reduce((acc, curr) => acc + curr.nota, 0) /
-          prestador.avaliacoes.length
+    const averageRating =
+      provider.reviews.length > 0
+        ? provider.reviews.reduce((acc, curr) => acc + curr.rating, 0) /
+          provider.reviews.length
         : 0;
 
-    const servicos = prestador.servicos.map((servico) => {
-      return {
-        id: servico.id,
-        categoria: {
-          id: servico.categoria.id,
-          nome: servico.categoria.nome,
-          slug: servico.categoria.slug,
-        },
-        titulo: servico.titulo,
-        descricao: servico.descricao,
-        preco_min: servico.preco_min,
-        preco_max: servico.preco_max,
-        tempo_estimado: servico.tempo_estimado,
-        local_atendimento: servico.local_atendimento,
-        fotos_urls: servico.fotos_urls,
-      };
-    });
-
-    const avaliacoes = prestador.avaliacoes.map((avaliacao) => ({
-      nome_cliente: avaliacao.nome_cliente,
-      nota: avaliacao.nota,
-      comentario: avaliacao.comentario,
-      data_hora: avaliacao.data_hora.toISOString(),
+    const services = provider.services.map((s) => ({
+      id: s.id,
+      category: {
+        id: s.category.id,
+        name: s.category.name,
+        slug: s.category.slug,
+      },
+      title: s.title,
+      description: s.description,
+      priceMin: s.priceMin,
+      priceMax: s.priceMax,
+      estimatedTime: s.estimatedTime,
+      serviceLocation: s.serviceLocation,
+      photoUrls: s.photoUrls,
     }));
 
-    const contatos = {
-      whatsapp: prestador.telefone,
-      email: prestador.usuario.email,
-      telefone: prestador.telefone,
-      site_externo: null,
+    const reviews = provider.reviews.map((r) => ({
+      clientName: r.clientName,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt.toISOString(),
+    }));
+
+    const contacts = {
+      whatsapp: provider.phone,
+      email: provider.user.email,
+      phone: provider.phone,
+      externalSite: null,
     };
 
     return {
-      id: prestador.id,
-      nome: prestador.usuario.nome,
-      foto_url: prestador.foto_url,
-      nota_media: parseFloat(notaMedia.toFixed(1)),
-      total_avaliacoes: prestador.avaliacoes.length,
-      descricao: '',
-      endereco: prestador.endereco,
-      cidade: prestador.cidade,
-      estado: prestador.estado,
-      cep: prestador.cep,
-      atende_domicilio: prestador.atende_domicilio,
-      horario_funcionamento: prestador.horario_funcionamento,
-      servicos,
-      avaliacoes,
-      contatos,
+      id: provider.id,
+      name: provider.user.name,
+      photoUrl: provider.photoUrl,
+      averageRating: +averageRating.toFixed(1),
+      totalReviews: provider.reviews.length,
+      description: '',
+      address: provider.address,
+      city: provider.city,
+      state: provider.state,
+      zipCode: provider.zipCode,
+      homeService: provider.homeService,
+      businessHours: provider.businessHours,
+      services,
+      reviews,
+      contacts,
     };
   }
 
-  obterMetricasVisitas(prestadorId: number, periodo: number) {
-    const hoje = new Date();
-    const resultado: { data: string; total_visitas: number }[] = [];
+  getVisitMetrics(providerId: number, days: number) {
+    const today = new Date();
+    const result: { date: string; totalVisits: number }[] = [];
 
-    for (let i = 0; i < periodo; i++) {
-      const data = new Date(hoje);
-      data.setDate(data.getDate() - i);
-
-      resultado.push({
-        data: data.toISOString().split('T')[0],
-        total_visitas: Math.floor(Math.random() * 20) + 1,
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      result.push({
+        date: date.toISOString().split('T')[0],
+        totalVisits: Math.floor(Math.random() * 20) + 1,
       });
     }
 
-    return resultado.reverse();
+    return result.reverse();
   }
 
-  obterMetricasCliques(prestadorId: number, periodo: number) {
-    const hoje = new Date();
-    const resultado: {
-      data: string;
-      tipo_contato: string;
-      total_cliques: number;
-    }[] = [];
-    const tiposContato = ['whatsapp', 'email', 'telefone'];
+  getClickMetrics(providerId: number, days: number) {
+    const today = new Date();
+    const contactTypes = ['whatsapp', 'email', 'phone'];
+    const result: { date: string; contactType: string; totalClicks: number }[] =
+      [];
 
-    for (let i = 0; i < periodo; i++) {
-      const data = new Date(hoje);
-      data.setDate(data.getDate() - i);
+    for (let i = 0; i < days; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
 
-      for (const tipo of tiposContato) {
-        resultado.push({
-          data: data.toISOString().split('T')[0],
-          tipo_contato: tipo,
-          total_cliques: Math.floor(Math.random() * 10) + 1,
+      for (const type of contactTypes) {
+        result.push({
+          date: date.toISOString().split('T')[0],
+          contactType: type,
+          totalClicks: Math.floor(Math.random() * 10) + 1,
         });
       }
     }
 
-    return resultado.reverse();
+    return result.reverse();
   }
 }
