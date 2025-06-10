@@ -20,8 +20,12 @@ export class ServiceProviderVisit {
   })
   visitedAt: Date;
 
-  @Column({ type: 'enum', enum: VisitOrigin, name: 'visit_origin' })
-  visitOrigin: VisitOrigin;
+  @Column({
+    type: 'enum',
+    enum: ['busca', 'categoria', 'home', 'destaque'],
+    name: 'visit_origin',
+  })
+  visitOrigin: 'busca'| 'categoria'| 'home'| 'destaque';
 
   @ManyToOne(() => ServiceProvider, (provider) => provider.visits)
   @JoinColumn({ name: 'service_provider_id' })

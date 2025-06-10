@@ -1,6 +1,4 @@
-import { mkdir } from 'fs/promises';
-
-// Função para converter string em slug
+// Função para converter ‘string’ em slug
 export function slugify(text: string): string {
   return text
     .toString()

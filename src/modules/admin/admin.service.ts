@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+//import { JwtService } from '@nestjs/jwt';
 import { v4 } from 'uuid';
 import { add } from 'date-fns';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,7 +23,7 @@ export class AdminService {
     @InjectRepository(Category)
     private readonly categoryRepo: Repository<Category>,
 
-    private readonly jwtService: JwtService,
+    //private readonly jwtService: JwtService,
   ) {}
 
   gerarTokenConvite(validadeDias: number) {
@@ -53,7 +53,7 @@ export class AdminService {
 
   async getTopCategorias(periodo: number) {
     const dataLimite = add(new Date(), { days: -periodo });
-
+    console.log(dataLimite);
     // Consulta simplificada: ordena pela data de criação ou ‘id’
     const categorias = await this.categoryRepo.find({
       take: 5,
@@ -70,8 +70,8 @@ export class AdminService {
 
   async getTopPrestadores(periodo: number) {
     const dataLimite = add(new Date(), { days: -periodo });
-
-    // Busca prestadores com relação ao utilizador
+    console.log(dataLimite);
+    // Busca serviceProvider com relação ao utilizador
     const prestadores = await this.serviceProviderRepo.find({
       take: 5,
       relations: ['user'],

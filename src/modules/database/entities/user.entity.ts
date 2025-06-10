@@ -11,8 +11,8 @@ export class User {
 
   @Column({ name: 'password_hash' }) passwordHash: string;
 
-  @Column({ type: 'enum', enum: UserType, name: 'user_type' })
-  userType: UserType;
+  @Column({ type: 'enum', enum: ["admin",'prestador'], name: 'user_type' })
+  userType: "admin"|'prestador';
 
   @Column({ name: 'invite_token', nullable: true }) inviteToken?: string;
 

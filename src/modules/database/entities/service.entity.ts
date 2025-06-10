@@ -27,8 +27,12 @@ export class Service {
 
   @Column({ name: 'estimated_time' }) estimatedTime: string;
 
-  @Column({ type: 'enum', enum: ServiceLocation, name: 'service_location' })
-  serviceLocation: ServiceLocation;
+  @Column({
+    type: 'enum',
+    enum: ['oficina', 'domicilio', 'ambos'],
+    name: 'service_location',
+  })
+  serviceLocation: 'oficina'| 'domicilio'| 'ambos';
 
   @Column({ name: 'photo_urls', type: 'text', nullable: true })
   photoUrls?: string;

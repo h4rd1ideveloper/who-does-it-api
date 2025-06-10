@@ -5,11 +5,13 @@ import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
-import { PrismaModule } from '../../prisma/prisma.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServiceProvider } from '../database/entities/service-provider.entity';
+import { User } from '../database/entities/user.entity';
 
 @Module({
   imports: [
-    PrismaModule,
+    TypeOrmModule.forFeature([User,ServiceProvider]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],

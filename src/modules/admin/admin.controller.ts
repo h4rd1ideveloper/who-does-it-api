@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Query, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
@@ -29,7 +29,7 @@ export class AdminController {
     return this.adminService.getTopCategorias(parseInt(periodo));
   }
 
-  @Get('metricas/prestadores')
+  @Get('metricas/serviceProvider')
   async getTopPrestadores(@Query('periodo') periodo: string = '7') {
     return this.adminService.getTopPrestadores(parseInt(periodo));
   }

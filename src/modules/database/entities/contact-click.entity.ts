@@ -7,14 +7,19 @@ import {
 } from 'typeorm';
 import { ServiceProvider } from './service-provider.entity';
 
+
 @Entity({ name: 'contact_clicks' })
 export class ContactClick {
   @PrimaryGeneratedColumn() id: number;
 
   @Column({ name: 'service_provider_id' }) serviceProviderId: number;
 
-  @Column({ type: 'enum', enum: ContactType, name: 'contact_type' })
-  contactType: ContactType;
+  @Column({
+    type: 'enum',
+    enum: ['whatsapp', 'email', 'telefone'],
+    name: 'contact_type',
+  })
+  contactType: 'whatsapp' | 'email' | 'telefone';
 
   @Column({
     name: 'clicked_at',

@@ -1,89 +1,94 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { UnauthorizedException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from '../database/entities/user.entity';
+import { Repository } from 'typeorm';
+import { ServiceProvider } from '../database/entities/service-provider.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(User)
+    private readonly serviceProviderRepository: Repository<ServiceProvider>,
     private jwtService: JwtService,
   ) {}
 
-  async validateAdmin(email: string, senha: string) {
-    const usuario = await this.prisma.usuario.findFirst({
-      where: { email, tipo_usuario: 'admin' },
+  async validateAdmin(email: string, password: string) {
+    const user = await this.userRepository.findOne({
+      where: { email, userType: UserType.ADMIN },
     });
 
-    if (!usuario) {
+    if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
-    if (!senhaValida) {
+    const validPass = await bcrypt.compare(password, user.passwordHash);
+    if (!validPass) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
     return {
-      id: usuario.id,
-      email: usuario.email,
-      tipo_usuario: usuario.tipo_usuario,
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
     };
   }
 
-  async validatePrestador(email: string, senha: string) {
-    const usuario = await this.prisma.usuario.findFirst({
-      where: { email, tipo_usuario: 'prestador' },
+  async validateServiceProvider(email: string, password: string) {
+    const user = await this.userRepository.findOne({
+      where: { email, userType: UserType.SERVICE_PROVIDER },
     });
 
-    if (!usuario) {
+    if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
-    if (!senhaValida) {
+    const validPass = await bcrypt.compare(password, user.passwordHash);
+    if (!validPass) {
       throw new UnauthorizedException('Credenciais inválidas');
     }
 
-    const prestador = await this.prisma.prestador.findUnique({
-      where: { id: usuario.id },
+    const serviceProvider = await this.serviceProviderRepository.findOne({
+      where: { id: user.id },
     });
 
-    if (!prestador || !prestador.is_ativo) {
+    if (!serviceProvider || !serviceProvider.isActive) {
       throw new UnauthorizedException('Prestador inativo ou não encontrado');
     }
 
     return {
-      id: usuario.id,
-      email: usuario.email,
-      tipo_usuario: usuario.tipo_usuario,
-      prestador_id: prestador.id,
+      id: user.id,
+      email: user.email,
+      userType: user.userType,
+      serviceProviderId: serviceProvider.id,
     };
   }
 
   async loginAdmin(email: string, senha: string) {
-    const usuario = await this.validateAdmin(email, senha);
+    const user = await this.validateAdmin(email, senha);
     const payload = {
-      sub: usuario.id,
-      email: usuario.email,
-      tipo: usuario.tipo_usuario,
+      sub: user.id,
+      email: user.email,
+      userType: user.userType,
     };
     return {
       token: this.jwtService.sign(payload),
     };
   }
 
-  async loginPrestador(email: string, senha: string) {
-    const usuario = await this.validatePrestador(email, senha);
+  async loginServiceProvider(email: string, senha: string) {
+    const user = await this.validateServiceProvider(email, senha);
     const payload = {
-      sub: usuario.id,
-      email: usuario.email,
-      tipo: usuario.tipo_usuario,
+      sub: user.id,
+      email: user.email,
+      type: user.userType,
     };
     return {
       token: this.jwtService.sign(payload),
-      prestador_id: usuario.prestador_id,
+      serviceProviderId: user.serviceProviderId,
     };
   }
 }

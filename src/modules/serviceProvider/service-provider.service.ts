@@ -4,9 +4,8 @@ import {
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { CreateServiceProviderDto } from './create-prestador.dto';
+import { CreateServiceProviderDto } from './create-service-provider.dto';
 import { ServiceProvider } from '../database/entities/service-provider.entity';
 import { User } from '../database/entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,11 +14,12 @@ import { Service } from '../database/entities/service.entity';
 import { Category } from '../database/entities/category.entity';
 import { Review } from '../database/entities/review.entity';
 
+
 @Injectable()
 export class ServiceProviderService {
   constructor(
     @InjectRepository(ServiceProvider)
-    private readonly providerRepository: Repository<ServiceProvider>,
+    private readonly serviceProviderRepository: Repository<ServiceProvider>,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
@@ -53,12 +53,12 @@ export class ServiceProviderService {
       name: data.name,
       email: data.email,
       passwordHash,
-      userType: 'prestador' as UserType,
+      userType: UserType.SERVICE_PROVIDER,
     });
 
     const savedUser = await this.userRepository.save(user);
 
-    const provider = this.providerRepository.create({
+    const serviceProvider = this.serviceProviderRepository.create({
       id: savedUser.id,
       cpfCnpj: data.cpfCnpj,
       phone: data.phone,
@@ -72,12 +72,12 @@ export class ServiceProviderService {
       isActive: true,
     });
 
-    const savedProvider = await this.providerRepository.save(provider);
+    const savedServiceProvider = await this.serviceProviderRepository.save(serviceProvider);
 
     if (data.services && data.services.length > 0) {
       for (const serviceData of data.services) {
         const service = this.serviceRepository.create({
-          serviceProviderId: savedProvider.id,
+          serviceProviderId: savedServiceProvider.id,
           categoryId: serviceData.categoryId,
           title: serviceData.title,
           description: serviceData.description,
@@ -94,7 +94,7 @@ export class ServiceProviderService {
     }
 
     return {
-      providerId: savedProvider.id,
+      providerId: savedServiceProvider.id,
       message: 'Registration successful',
     };
   }
@@ -105,7 +105,7 @@ export class ServiceProviderService {
     city?: string,
     orderBy?: string,
   ) {
-    let qb = this.providerRepository
+    let qb = this.serviceProviderRepository
       .createQueryBuilder('provider')
       .leftJoinAndSelect('provider.user', 'user')
       .leftJoinAndSelect('provider.services', 'service')
@@ -168,7 +168,7 @@ export class ServiceProviderService {
   }
 
   async getProviderProfile(id: number) {
-    const provider = await this.providerRepository.findOne({
+    const provider = await this.serviceProviderRepository.findOne({
       where: { id },
       relations: ['user', 'services', 'services.category', 'reviews'],
     });
