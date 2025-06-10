@@ -8,81 +8,113 @@ import { Repository } from 'typeorm';
 import { ServiceProviderVisit } from '../database/entities/service-provider-visit.entity';
 import { ContactClick } from '../database/entities/contact-click.entity';
 import { Category } from '../database/entities/category.entity';
+import { InvitationToken } from '../database/entities/Invitation-token.entity';
+import { CategoryVisit } from '../database/entities/category-visit.entity';
+
 @Injectable()
 export class AdminService {
   constructor(
     @InjectRepository(ServiceProvider)
     private readonly serviceProviderRepo: Repository<ServiceProvider>,
-
     @InjectRepository(ServiceProviderVisit)
     private readonly visitRepo: Repository<ServiceProviderVisit>,
-
     @InjectRepository(ContactClick)
     private readonly clickRepo: Repository<ContactClick>,
-
     @InjectRepository(Category)
     private readonly categoryRepo: Repository<Category>,
-
-    //private readonly jwtService: JwtService,
+    @InjectRepository(InvitationToken)
+    private readonly invitationTokenRepo: Repository<InvitationToken>, //private readonly jwtService: JwtService,
+    @InjectRepository(CategoryVisit)
+    private readonly categoryVisitRepo: Repository<CategoryVisit>,
   ) {}
 
-  gerarTokenConvite(validadeDias: number) {
-    const token = v4();
-    const dataExpiracao = add(new Date(), { days: validadeDias });
-
-    // Em um ambiente real, salvaríamos o ‘token’ numa tabela específica
-    // ou atualizaríamos um registro existente
-
+  async createInvitationToken(validadeDias: number) {
+    const tokenV4 = v4();
+    const expiresAtDate = add(new Date(), { days: validadeDias });
+    const savedInvitationToken = this.invitationTokenRepo.create({
+      token: tokenV4,
+      expiresAt: expiresAtDate.toISOString().split('T')[0],
+    });
+    const { token, expiresAt } =
+      await this.invitationTokenRepo.save(savedInvitationToken);
     return {
       token,
-      data_expiracao: dataExpiracao.toISOString().split('T')[0],
+      expiresAt,
     };
   }
 
-  async getEstatisticasGerais() {
-    const totalPrestadores = await this.serviceProviderRepo.count();
-    const totalVisitas = await this.visitRepo.count();
-    const totalCliques = await this.clickRepo.count();
+  async getStatistics() {
+    const totalProviders = await this.serviceProviderRepo.count();
+    const totalVisits = await this.visitRepo.count();
+    const totalClicks = await this.clickRepo.count();
+    const totalCategories = await this.categoryRepo.count();
+    const totalTokens = await this.invitationTokenRepo.count();
+    const totalCategoryVisits = await this.categoryVisitRepo.count();
 
     return {
-      total_prestadores: totalPrestadores,
-      total_visitas: totalVisitas,
-      total_cliques: totalCliques,
+      total_providers: totalProviders,
+      total_visits: totalVisits,
+      total_clicks: totalClicks,
+      total_categories: totalCategories,
+      total_tokens: totalTokens,
+      total_category_visits: totalCategoryVisits,
     };
   }
 
-  async getTopCategorias(periodo: number) {
+  async getRecentCategoryVisits(periodo: number) {
     const dataLimite = add(new Date(), { days: -periodo });
-    console.log(dataLimite);
-    // Consulta simplificada: ordena pela data de criação ou ‘id’
-    const categorias = await this.categoryRepo.find({
-      take: 5,
-      order: { id: 'ASC' },
-    });
 
-    // Simulação de visitas
-    return categorias.map((categoria) => ({
-      categoria_id: categoria.id,
-      nome: categoria.name,
-      total_visitas: Math.floor(Math.random() * 100) + 20,
+    // Consulta agregada: conta visitas por categoria no período, ordena decrescente e limita a 5
+    const results = await this.categoryVisitRepo
+      .createQueryBuilder('visit')
+      .select('visit.category_id', 'categoryId')
+      .addSelect('COUNT(visit.id)', 'totalVisits')
+      .addSelect('category.name', 'categoryName')
+      .innerJoin('visit.category', 'category')
+      .where('visit.visitedAt >= :dataLimite', { dataLimite })
+      .groupBy('visit.category_id')
+      .addGroupBy('category.name')
+      .orderBy('totalVisits', 'DESC')
+      .limit(5)
+      .getRawMany<{
+        categoryId: number;
+        totalVisits: string;
+        categoryName: string;
+      }>();
+
+    // Formata o resultado
+    return results.map((r) => ({
+      category_id: r.categoryId,
+      name: r.categoryName,
+      total_visits: parseInt(r.totalVisits, 10),
     }));
   }
 
-  async getTopPrestadores(periodo: number) {
+  async getRecentServiceProviderVisits(periodo: number) {
     const dataLimite = add(new Date(), { days: -periodo });
-    console.log(dataLimite);
-    // Busca serviceProvider com relação ao utilizador
-    const prestadores = await this.serviceProviderRepo.find({
-      take: 5,
-      relations: ['user'],
-      order: { id: 'ASC' },
-    });
 
-    // Simulação de visitas
-    return prestadores.map((prestador) => ({
-      prestador_id: prestador.id,
-      nome: prestador.user.name,
-      total_visitas: Math.floor(Math.random() * 50) + 10,
+    const results = await this.visitRepo
+      .createQueryBuilder('visit')
+      .select('visit.service_provider_id', 'providerId')
+      .addSelect('COUNT(visit.id)', 'totalVisits')
+      .addSelect('provider_user.name', 'providerName')
+      .innerJoin('visit.serviceProvider', 'provider')
+      .innerJoin('provider.user', 'provider_user')
+      .where('visit.visitedAt >= :dataLimite', { dataLimite })
+      .groupBy('visit.service_provider_id')
+      .addGroupBy('provider_user.name')
+      .orderBy('totalVisits', 'DESC')
+      .limit(5)
+      .getRawMany<{
+        providerId: number;
+        totalVisits: string; // virá como ‘string’ do COUNT
+        providerName: string;
+      }>();
+
+    return results.map((r) => ({
+      service_provider_id: r.providerId,
+      name: r.providerName,
+      total_visits: parseInt(r.totalVisits, 10),
     }));
   }
 }

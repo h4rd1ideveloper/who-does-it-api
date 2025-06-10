@@ -32,12 +32,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
       throw err;
     }
 
-    // Se não veio usuário válido, lança Unauthorized
+    // Se não veio utilizador válido, lança Unauthorized
     if (!user) {
       throw new UnauthorizedException('Acesso não autorizado');
     }
 
-    // Retorna o usuário tipado como JwtUser
+    // Retorna o utilizador tipado como JwtUser
     return user;
   }
 }

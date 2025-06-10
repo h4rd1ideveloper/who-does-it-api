@@ -22,12 +22,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const validPass = await bcrypt.compare(password, user.passwordHash);
     if (!validPass) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     return {
@@ -43,12 +43,12 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const validPass = await bcrypt.compare(password, user.passwordHash);
     if (!validPass) {
-      throw new UnauthorizedException('Credenciais inválidas');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const serviceProvider = await this.serviceProviderRepository.findOne({
@@ -56,7 +56,7 @@ export class AuthService {
     });
 
     if (!serviceProvider || !serviceProvider.isActive) {
-      throw new UnauthorizedException('Prestador inativo ou não encontrado');
+      throw new UnauthorizedException('Service provider inactive or not found');
     }
 
     return {
@@ -67,8 +67,8 @@ export class AuthService {
     };
   }
 
-  async loginAdmin(email: string, senha: string) {
-    const user = await this.validateAdmin(email, senha);
+  async loginAdmin(email: string, password: string) {
+    const user = await this.validateAdmin(email, password);
     const payload = {
       sub: user.id,
       email: user.email,
@@ -79,12 +79,12 @@ export class AuthService {
     };
   }
 
-  async loginServiceProvider(email: string, senha: string) {
-    const user = await this.validateServiceProvider(email, senha);
+  async loginServiceProvider(email: string, password: string) {
+    const user = await this.validateServiceProvider(email, password);
     const payload = {
       sub: user.id,
       email: user.email,
-      type: user.userType,
+      userType: user.userType,
     };
     return {
       token: this.jwtService.sign(payload),

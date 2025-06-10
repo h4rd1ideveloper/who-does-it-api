@@ -21,7 +21,7 @@ export class RolesGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<AuthRequest>();
     const user = request.user; // agora é JwtUser, não any
 
-    // verifica se o tipo_usuario está entre os permitidos
-    return requiredRoles.includes(user.tipo_usuario);
+    // verifica se o tipo do usuário está entre os permitidos
+    return requiredRoles.includes(user.userType);
   }
 }

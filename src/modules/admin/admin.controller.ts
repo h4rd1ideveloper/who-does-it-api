@@ -16,21 +16,21 @@ export class AdminController {
 
   @Post('tokens')
   async gerarTokenConvite(@Body() tokenDto: TokenDto) {
-    return this.adminService.gerarTokenConvite(tokenDto.validade_dias);
+    return this.adminService.createInvitationToken(tokenDto.validade_dias);
   }
 
   @Get('estatisticas/geral')
-  async getEstatisticasGerais() {
-    return this.adminService.getEstatisticasGerais();
+  async getStatistics() {
+    return this.adminService.getStatistics();
   }
 
   @Get('metricas/categorias')
-  async getTopCategorias(@Query('periodo') periodo: string = '7') {
-    return this.adminService.getTopCategorias(parseInt(periodo));
+  async getRecentCategoryVisits(@Query('periodo') periodo: string = '7') {
+    return this.adminService.getRecentCategoryVisits(parseInt(periodo));
   }
 
   @Get('metricas/serviceProvider')
-  async getTopPrestadores(@Query('periodo') periodo: string = '7') {
-    return this.adminService.getTopPrestadores(parseInt(periodo));
+  async getRecentServiceProviderVisits(@Query('periodo') periodo: string = '7') {
+    return this.adminService.getRecentServiceProviderVisits(parseInt(periodo));
   }
 }
