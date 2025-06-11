@@ -6,7 +6,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ServiceProviderModule } from './modules/serviceProvider/service-provider.module';
 import { CategoriasModule } from './modules/categorias/categorias.module';
-import { ServicosModule } from './modules/service/servicos.module';
+import { ServicesModule } from './modules/services/services.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { MetricasModule } from './modules/metricas/metricas.module';
 import { DatabaseModule } from './modules/database/database.module';
@@ -19,7 +19,7 @@ import { DatabaseModule } from './modules/database/database.module';
     AdminModule,
     ServiceProviderModule,
     CategoriasModule,
-    ServicosModule,
+    ServicesModule,
     ReviewsModule,
     MetricasModule,
   ],

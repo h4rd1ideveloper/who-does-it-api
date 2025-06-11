@@ -108,14 +108,14 @@ export class ServiceProviderService {
     let qb = this.serviceProviderRepository
       .createQueryBuilder('provider')
       .leftJoinAndSelect('provider.user', 'user')
-      .leftJoinAndSelect('provider.services', 'service')
+      .leftJoinAndSelect('provider.services', 'services')
       .leftJoinAndSelect('provider.reviews', 'review')
-      .leftJoinAndSelect('service.category', 'category')
+      .leftJoinAndSelect('services.category', 'category')
       .where('provider.isActive = true');
 
     if (query) {
       qb = qb.andWhere(
-        '(service.title ILIKE :query OR service.description ILIKE :query)',
+        '(services.title ILIKE :query OR services.description ILIKE :query)',
         { query: `%${query}%` },
       );
     }

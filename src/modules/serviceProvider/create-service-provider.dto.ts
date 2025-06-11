@@ -1,4 +1,4 @@
-import { CreateServiceDto } from '../service/create-service.dto';
+import { CreateServiceDto } from '../services/create-service.dto';
 
 export class CreateServiceProviderDto {
   token: string;
