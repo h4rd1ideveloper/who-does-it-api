@@ -9,10 +9,11 @@ import { ServiceProviderVisit } from '../database/entities/service-provider-visi
 import { ContactClick } from '../database/entities/contact-click.entity';
 import { Category } from '../database/entities/category.entity';
 import { InvitationToken } from '../database/entities/Invitation-token.entity';
+import { CategoryVisit } from '../database/entities/category-visit.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ServiceProvider,ServiceProviderVisit,ContactClick,Category,InvitationToken]),
+    TypeOrmModule.forFeature([ServiceProvider,ServiceProviderVisit,ContactClick,Category,InvitationToken,CategoryVisit]),
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
