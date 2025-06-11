@@ -61,8 +61,8 @@ export class AdminService {
     };
   }
 
-  async getRecentCategoryVisits(periodo: number) {
-    const dataLimite = add(new Date(), { days: -periodo });
+  async getRecentCategoryVisits(period: number) {
+    const limitDate = add(new Date(), { days: -period });
 
     // Consulta agregada: conta visitas por categoria no período, ordena decrescente e limita a 5
     const results = await this.categoryVisitRepo
@@ -71,7 +71,7 @@ export class AdminService {
       .addSelect('COUNT(visit.id)', 'totalVisits')
       .addSelect('category.name', 'categoryName')
       .innerJoin('visit.category', 'category')
-      .where('visit.visitedAt >= :dataLimite', { dataLimite })
+      .where('visit.visitedAt >= :limitDate', { limitDate })
       .groupBy('visit.category_id')
       .addGroupBy('category.name')
       .orderBy('totalVisits', 'DESC')
@@ -90,8 +90,8 @@ export class AdminService {
     }));
   }
 
-  async getRecentServiceProviderVisits(periodo: number) {
-    const dataLimite = add(new Date(), { days: -periodo });
+  async getRecentServiceProviderVisits(period: number) {
+    const limitDate = add(new Date(), { days: -period });
 
     const results = await this.visitRepo
       .createQueryBuilder('visit')
@@ -100,7 +100,7 @@ export class AdminService {
       .addSelect('provider_user.name', 'providerName')
       .innerJoin('visit.serviceProvider', 'provider')
       .innerJoin('provider.user', 'provider_user')
-      .where('visit.visitedAt >= :dataLimite', { dataLimite })
+      .where('visit.visitedAt >= :limitDate', { limitDate })
       .groupBy('visit.service_provider_id')
       .addGroupBy('provider_user.name')
       .orderBy('totalVisits', 'DESC')

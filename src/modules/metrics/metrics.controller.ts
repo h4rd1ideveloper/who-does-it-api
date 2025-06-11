@@ -22,22 +22,26 @@ export class MetricsController {
   }
 
   @Get('visitas') async getVisitMetrics(
-    @Query('providerId') providerId: number,
-    @Query('period') period: number = 7,
+    @Query('providerId') providerId: string,
+    @Query('period') period: string = '7',
   ) {
-    return this.metricsService.getVisitMetricsByPeriod(providerId, period);
+    return this.metricsService.getVisitMetricsByPeriod(
+      parseInt(providerId),
+      parseInt(period),
+    );
   }
 
   @Get('cliques') async getClickMetrics(
-    @Query('providerId') providerId: number,
-    @Query('period') period: number,
+    @Query('providerId') providerId: string,
+    @Query('period') period: string,
   ) {
-    return this.metricsService.getClickMetricsByPeriod(providerId, period);
+    return this.metricsService.getClickMetricsByPeriod(
+      parseInt(providerId),
+      parseInt(period),
+    );
   }
 
-  @Get('categories') async getCategoryMetrics(
-    @Query('period') period: number,
-  ) {
+  @Get('categories') async getCategoryMetrics(@Query('period') period: number) {
     return this.metricsService.getCategoryMetricsByPeriod(period);
   }
 }
