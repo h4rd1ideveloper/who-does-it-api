@@ -44,7 +44,7 @@ export class ServiceProviderController {
     return this.prestadoresService.getProviderProfile(parseInt(id));
   }
 
-  @Get('prestador/:id/metricas/visitas')
+  @Get('prestador/:id/metrics/visitas')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('prestador')
   async obterMetricasVisitas(
@@ -57,7 +57,7 @@ export class ServiceProviderController {
     );
   }
 
-  @Get('prestador/:id/metricas/cliques')
+  @Get('prestador/:id/metrics/cliques')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('prestador')
   async obterMetricasCliques(

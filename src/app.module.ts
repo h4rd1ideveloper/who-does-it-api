@@ -5,10 +5,10 @@ import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { ServiceProviderModule } from './modules/serviceProvider/service-provider.module';
-import { CategoriasModule } from './modules/categorias/categorias.module';
+import { CategoriesModule } from './modules/categories/categories.module';
 import { ServicesModule } from './modules/services/services.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
-import { MetricasModule } from './modules/metricas/metricas.module';
+import { MetricsModule } from './modules/metrics/metrics.module';
 import { DatabaseModule } from './modules/database/database.module';
 
 @Module({
@@ -18,10 +18,10 @@ import { DatabaseModule } from './modules/database/database.module';
     AuthModule,
     AdminModule,
     ServiceProviderModule,
-    CategoriasModule,
+    CategoriesModule,
     ServicesModule,
     ReviewsModule,
-    MetricasModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

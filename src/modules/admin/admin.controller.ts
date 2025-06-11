@@ -24,12 +24,12 @@ export class AdminController {
     return this.adminService.getStatistics();
   }
 
-  @Get('metricas/categorias')
+  @Get('metrics/categories')
   async getRecentCategoryVisits(@Query('periodo') periodo: string = '7') {
     return this.adminService.getRecentCategoryVisits(parseInt(periodo));
   }
 
-  @Get('metricas/serviceProvider')
+  @Get('metrics/serviceProvider')
   async getRecentServiceProviderVisits(@Query('periodo') periodo: string = '7') {
     return this.adminService.getRecentServiceProviderVisits(parseInt(periodo));
   }
