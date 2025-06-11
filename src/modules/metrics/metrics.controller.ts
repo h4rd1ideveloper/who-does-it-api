@@ -23,7 +23,7 @@ export class MetricsController {
 
   @Get('visitas') async getVisitMetrics(
     @Query('providerId') providerId: number,
-    @Query('period') period: number,
+    @Query('period') period: number = 7,
   ) {
     return this.metricsService.getVisitMetricsByPeriod(providerId, period);
   }

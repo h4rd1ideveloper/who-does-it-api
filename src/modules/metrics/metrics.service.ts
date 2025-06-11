@@ -6,6 +6,7 @@ import { ContactClick } from '../database/entities/contact-click.entity';
 import { CreateVisitDto } from './create-visit.dto';
 import { CreateContactClickDto } from './create-contact-click.dto';
 import { CategoryVisit } from '../database/entities/category-visit.entity';
+import { add } from 'date-fns';
 
 @Injectable()
 export class MetricsService {
@@ -14,10 +15,9 @@ export class MetricsService {
     private readonly visitRepo: Repository<ServiceProviderVisit>,
     @InjectRepository(ContactClick)
     private readonly clickRepo: Repository<ContactClick>,
-
     @InjectRepository(CategoryVisit)
     private readonly categoryVisitRepo: Repository<CategoryVisit>,
-    ) {}
+  ) {}
 
   async registerVisit(data: CreateVisitDto) {
     if (!data.providerId || !data.visitOrigin) {
@@ -56,15 +56,13 @@ export class MetricsService {
   }
 
   async getVisitMetricsByPeriod(providerId: number, period: number) {
-    const dataLimite = new Date();
-    dataLimite.setDate(dataLimite.getDate() - period);
-
+    const limitDate = add(new Date(), { days: -period });
     const raw = await this.visitRepo
       .createQueryBuilder('visit')
       .select("TO_CHAR(visit.visited_at, 'YYYY-MM-DD')", 'date')
       .addSelect('COUNT(visit.id)', 'totalVisits')
       .where('visit.service_provider_id = :providerId', { providerId })
-      .andWhere('visit.visited_at >= :dataLimite', { dataLimite })
+      .andWhere('visit.visited_at >= :limitDate', { limitDate })
       .groupBy('date')
       .orderBy('date', 'ASC')
       .getRawMany<{ date: string; totalVisits: string }>();
@@ -76,8 +74,7 @@ export class MetricsService {
   }
 
   async getClickMetricsByPeriod(providerId: number, period: number) {
-    const dataLimite = new Date();
-    dataLimite.setDate(dataLimite.getDate() - period);
+    const limitDate = add(new Date(), { days: -period });
 
     const raw = await this.clickRepo
       .createQueryBuilder('click')
@@ -85,7 +82,7 @@ export class MetricsService {
       .addSelect('click.contact_type', 'contactType')
       .addSelect('COUNT(click.id)', 'totalClicks')
       .where('click.service_provider_id = :providerId', { providerId })
-      .andWhere('click.clicked_at >= :dataLimite', { dataLimite })
+      .andWhere('click.clicked_at >= :limitDate', { limitDate })
       .groupBy('date')
       .addGroupBy('click.contact_type')
       .orderBy('date', 'ASC')
@@ -98,10 +95,8 @@ export class MetricsService {
     }));
   }
 
-
   async getCategoryMetricsByPeriod(period: number) {
-    const dataLimit = new Date();
-    dataLimit.setDate(dataLimit.getDate() - period);
+    const limitDate = add(new Date(), { days: -period });
 
     const raw = await this.categoryVisitRepo
       .createQueryBuilder('visit')
@@ -110,13 +105,18 @@ export class MetricsService {
       .addSelect('category.name', 'categoryName')
       .addSelect('COUNT(visit.id)', 'totalVisits')
       .innerJoin('visit.category', 'category')
-      .where('visit.visited_at >= :dataLimit', { dataLimit })
+      .where('visit.visited_at >= :limitDate', { limitDate })
       .groupBy('date')
       .addGroupBy('visit.category_id')
       .addGroupBy('category.name')
       .orderBy('date', 'ASC')
       .addOrderBy('totalVisits', 'DESC')
-      .getRawMany<{ date: string; categoryId: number; categoryName: string; totalVisits: string }>();
+      .getRawMany<{
+        date: string;
+        categoryId: number;
+        categoryName: string;
+        totalVisits: string;
+      }>();
 
     return raw.map((r) => ({
       date: r.date,
