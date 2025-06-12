@@ -15,11 +15,11 @@ import { CreateServiceProviderDto } from './create-service-provider.dto';
 
 @Controller('service-provider')
 export class ServiceProviderController {
-  constructor(private readonly serviceProviderService: ServiceProviderService) {}
+  constructor(
+    private readonly serviceProviderService: ServiceProviderService,
+  ) {}
 
-  @Get('validate-token') async validateToken(
-    @Query('token') token: string,
-  ) {
+  @Get('validate-token') async validateToken(@Query('token') token: string) {
     return this.serviceProviderService.validateToken(token);
   }
 
@@ -43,15 +43,13 @@ export class ServiceProviderController {
     );
   }
 
-  @Get(':id') async getProviderProfile(
-    @Param('id') id: string,
-  ) {
+  @Get(':id') async getProviderProfile(@Param('id') id: string) {
     return this.serviceProviderService.getProviderProfile(parseInt(id));
   }
 
   @Get(':id/metrics/visits')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserType.SERVICE_PROVIDER)
+  @Roles('prestador')
   async getVisitMetrics(
     @Param('id') id: string,
     @Query('period') period: string = '7',
@@ -64,7 +62,7 @@ export class ServiceProviderController {
 
   @Get(':id/metrics/cliques')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserType.SERVICE_PROVIDER)
+  @Roles('prestador')
   async getClickMetrics(
     @Param('id') id: string,
     @Query('period') period: string = '7',

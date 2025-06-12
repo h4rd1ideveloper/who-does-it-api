@@ -15,7 +15,7 @@ export class CategoriesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserType.ADMIN)
+  @Roles('admin')
   async criarCategoria(@Body() data: CreateCategoryDto) {
     return this.categoriasService.createCategory(data);
   }
