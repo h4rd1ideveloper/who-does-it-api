@@ -54,8 +54,8 @@ backend/
     npm install
     ```
 4.  Configure as variáveis de ambiente:
-   *   Crie um arquivo `.env` baseado no `.env.example`
-   *   Configure a URL do banco de dados PostgreSQL
+    *   Crie um arquivo `.env` baseado no `.env.example`
+    *   Configure a URL do banco de dados PostgreSQL
 5.  Execute as migrações do TypeORM:
     ```bash
     npm run typeorm migration:run
@@ -65,51 +65,68 @@ Para iniciar o servidor em modo de desenvolvimento:
 
 ```bash
 npm run start:dev
-```
+````
 
 O servidor estará disponível em `http://localhost:3000`.
 
-## Rotas da API
+## Rotas da API Atualizadas
+
+Com base nos registros de log do NestJS (12/06/2025), as rotas disponíveis são:
+
+### Raiz
+
+- `GET /` - Health check (AppController)
 
 ### Autenticação (`/auth`)
-*   `POST /auth/login` - Login de usuário
-*   `POST /auth/register` - Registro de usuário (cliente)
+
+- `POST /auth/admin/login` - Login de usuário administrador
+- `POST /auth/service-provider/login` - Login de prestador de serviço
 
 ### Administração (`/admin`)
-*   `POST /admin/token` - Gerar token de convite para prestador
-*   `GET /admin/statistics/general` - Obter métricas gerais da plataforma
-*   `GET /admin/metrics/categories` - Obter métricas de visitas recentes por categoria
 
-### Prestadores (`/serviceProvider`)
-*   `POST /serviceProvider/register` - Cadastrar novo prestador (com token)
-*   `GET /serviceProvider` - Listar prestadores
-*   `GET /serviceProvider/:id` - Obter detalhes de um prestador
-*   `PUT /serviceProvider/:id` - Atualizar perfil de prestador
-*   `GET /serviceProvider/search` - Buscar prestadores por termo ou categoria
+- `POST /admin/tokens` - Gerar token de convite para prestador
+- `GET /admin/statistics/general` - Obter métricas gerais da plataforma
+- `GET /admin/metrics/categories` - Obter métricas de visitas por categoria
+- `GET /admin/metrics/serviceProvider` - Obter métricas de prestadores de serviço
+
+### Prestadores (`/service-provider`)
+
+- `GET /service-provider/validate-token` - Validar token de cadastro
+- `POST /service-provider` - Cadastrar novo prestador (com token)
+- `GET /service-provider` - Listar prestadores
+- `GET /service-provider/:id` - Obter detalhes de um prestador
+- `GET /service-provider/:id/metrics/visits` - Métricas de visitas a um prestador
+- `GET /service-provider/:id/metrics/cliques` - Métricas de cliques em contatos
 
 ### Categorias (`/categories`)
-*   `GET /categories` - Listar todas as categorias
-*   `POST /categories` - Criar nova categoria (admin)
-*   `PUT /categories/:id` - Atualizar categoria (admin)
-*   `DELETE /categories/:id` - Remover categoria (admin)
+
+- `GET /categories` - Listar todas as categorias
+- `POST /categories` - Criar nova categoria (admin)
+- `GET /categories/:id` - Obter categoria por ID
+- `GET /categories/slug/:slug` - Obter categoria por slug
 
 ### Serviços (`/services`)
-*   `GET /services` - Listar todos os serviços
-*   `GET /services/:id` - Obter detalhes de um serviço
-*   `POST /services` - Criar novo serviço (prestador)
-*   `PUT /services/:id` - Atualizar serviço (prestador)
-*   `DELETE /services/:id` - Remover serviço (prestador)
-*   `GET /services/provider/:id` - Listar serviços de um prestador
+
+- `GET /services/service-provider/:id` - Listar serviços de um prestador
+- `GET /services/:id` - Obter detalhes de um serviço
+- `POST /services` - Criar novo serviço (prestador)
+- `PUT /services/:id` - Atualizar serviço (prestador)
+- `DELETE /services/:id` - Remover serviço (prestador)
 
 ### Avaliações (`/reviews`)
-*   `GET /reviews/provider/:id` - Listar avaliações de um prestador
-*   `POST /reviews` - Criar nova avaliação
-*   `PUT /reviews/:id` - Atualizar avaliação (próprio autor)
-*   `DELETE /reviews/:id` - Remover avaliação (próprio autor ou admin)
+
+- `GET /reviews/service-provider/:id` - Listar avaliações de um prestador
+- `POST /reviews` - Criar nova avaliação
+- `GET /reviews/:id` - Obter avaliação por ID
 
 ### Métricas (`/metrics`)
-*   `GET /metrics/provider/:id/visits` - Obter métricas de visitas ao perfil
-*   `GET /metrics/provider/:id/clicks` - Obter métricas de cliques em contatos
+
+- `POST /metrics/view` - Registrar visualização de perfil
+- `POST /metrics/click` - Registrar clique em contato
+- `POST /metrics/category-visit` - Registrar visita a categoria
+- `GET /metrics/views` - Obter estatísticas de visualizações
+- `GET /metrics/clicks` - Obter estatísticas de cliques
+- `GET /metrics/categories-visit` - Obter visitas por categoria
 
 ## Autenticação
 
@@ -121,9 +138,9 @@ Authorization: Bearer <token>
 
 O sistema possui três níveis de acesso:
 
-*   **Admin**: Acesso total ao sistema
-*   **Prestador**: Gerencia seu perfil e serviços
-*   **Cliente/Visitante**: Visualiza e busca prestadores/serviços
+- **Admin**: Acesso total ao sistema
+- **Prestador**: Gerencia seu perfil e serviços
+- **Cliente/Visitante**: Visualiza e busca prestadores/serviços
 
 ## Testes
 

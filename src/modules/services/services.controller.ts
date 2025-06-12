@@ -15,14 +15,14 @@ import { Roles } from '../auth/roles.decorator';
 import { CreateServiceDto } from './create-service.dto';
 import { UpdateServiceDto } from './update-service.dto';
 
-@Controller('servicos')
+@Controller('services')
 export class ServicesController {
   constructor(private readonly servicesService: ServicesService) {}
 
-  @Get('prestador/:prestadorId') async listServicesByProvider(
-    @Param('prestadorId') prestadorId: string,
+  @Get('service-provider/:id') async listServicesByProvider(
+    @Param('id') id: string,
   ) {
-    return this.servicesService.listByProvider(parseInt(prestadorId));
+    return this.servicesService.listByProvider(parseInt(id));
   }
 
   @Get(':id') async getServiceById(@Param('id') id: string) {
