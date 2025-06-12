@@ -18,7 +18,7 @@ export class AuthController {
     }
   }
 
-  @Post('prestador/login') async loginPrestador(@Body() loginDto: LoginDto) {
+  @Post('service-provider/login') async loginPrestador(@Body() loginDto: LoginDto) {
     try {
       return await this.authService.loginServiceProvider(
         loginDto.email,

@@ -13,65 +13,65 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CreateServiceProviderDto } from './create-service-provider.dto';
 
-@Controller()
+@Controller('service-provider')
 export class ServiceProviderController {
-  constructor(private readonly prestadoresService: ServiceProviderService) {}
+  constructor(private readonly serviceProviderService: ServiceProviderService) {}
 
-  @Get('serviceProvider/validate-token') async validateToken(
+  @Get('validate-token') async validateToken(
     @Query('token') token: string,
   ) {
-    return this.prestadoresService.validateToken(token);
+    return this.serviceProviderService.validateToken(token);
   }
 
-  @Post('serviceProvider/register') async registerServiceProvider(
+  @Post() async registerServiceProvider(
     @Body() data: CreateServiceProviderDto,
   ) {
-    return this.prestadoresService.register(data);
+    return this.serviceProviderService.register(data);
   }
 
-  @Get('serviceProvider') async searchProviders(
+  @Get() async searchProviders(
     @Query('query') query: string,
-    @Query('categoria') categoria: string,
-    @Query('cidade') cidade: string,
-    @Query('ordenar_por') ordenarPor: string,
+    @Query('category') category: string,
+    @Query('city') city: string,
+    @Query('order') order: string,
   ) {
-    return this.prestadoresService.searchProviders(
+    return this.serviceProviderService.searchProviders(
       query,
-      categoria,
-      cidade,
-      ordenarPor,
+      category,
+      city,
+      order,
     );
   }
 
-  @Get('serviceProvider/:id') async getProviderProfile(
+  @Get(':id') async getProviderProfile(
     @Param('id') id: string,
   ) {
-    return this.prestadoresService.getProviderProfile(parseInt(id));
+    return this.serviceProviderService.getProviderProfile(parseInt(id));
   }
 
-  @Get('prestador/:id/metrics/visitas')
+  @Get(':id/metrics/visits')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('prestador')
+  @Roles(UserType.SERVICE_PROVIDER)
   async getVisitMetrics(
     @Param('id') id: string,
-    @Query('periodo') periodo: string = '7',
+    @Query('period') period: string = '7',
   ) {
-    return this.prestadoresService.getVisitMetrics(
+    return this.serviceProviderService.getVisitMetrics(
       parseInt(id),
-      parseInt(periodo),
+      parseInt(period),
     );
   }
 
-  @Get('prestador/:id/metrics/cliques')
+  @Get(':id/metrics/cliques')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('prestador')
+  @Roles(UserType.SERVICE_PROVIDER)
   async getClickMetrics(
     @Param('id') id: string,
-    @Query('periodo') periodo: string = '7',
+    @Query('period') period: string = '7',
   ) {
-    return this.prestadoresService.getClickMetrics(
+    return this.serviceProviderService.getClickMetrics(
       parseInt(id),
-      parseInt(periodo),
+      parseInt(period),
     );
   }
 }

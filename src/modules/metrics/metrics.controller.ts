@@ -7,21 +7,21 @@ import { CreateContactClickDto } from './create-contact-click.dto';
 export class MetricsController {
   constructor(private readonly metricsService: MetricsService) {}
 
-  @Post('visita') async registerVisit(@Body() data: CreateVisitDto) {
+  @Post('view') async registerVisit(@Body() data: CreateVisitDto) {
     return this.metricsService.registerVisit(data);
   }
 
-  @Post('clique') async registerClick(@Body() data: CreateContactClickDto) {
+  @Post('click') async registerClick(@Body() data: CreateContactClickDto) {
     return this.metricsService.registerClick(data);
   }
 
-  @Post('categoria') async registerCategoryVisit(
+  @Post('category-visit') async registerCategoryVisit(
     @Body('categoryId') categoryId: number,
   ) {
     return this.metricsService.registerCategoryVisit(categoryId);
   }
 
-  @Get('visitas') async getVisitMetrics(
+  @Get('views') async getVisitMetrics(
     @Query('providerId') providerId: string,
     @Query('period') period: string = '7',
   ) {
@@ -31,7 +31,7 @@ export class MetricsController {
     );
   }
 
-  @Get('cliques') async getClickMetrics(
+  @Get('clicks') async getClickMetrics(
     @Query('providerId') providerId: string,
     @Query('period') period: string,
   ) {
@@ -41,7 +41,7 @@ export class MetricsController {
     );
   }
 
-  @Get('categories') async getCategoryMetrics(@Query('period') period: number) {
+  @Get('categories-visit') async getCategoryMetrics(@Query('period') period: number) {
     return this.metricsService.getCategoryMetricsByPeriod(period);
   }
 }

@@ -6,11 +6,11 @@ import { CreateReviewDto } from './create-review.dto';
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
-  @Get('prestador/:prestadorId') async listReviewsByServiceProvider(
-    @Param('prestadorId') prestadorId: string,
+  @Get('service-provider/:id') async listReviewsByServiceProvider(
+    @Param('id') id: string,
   ) {
     return this.reviewsService.listReviewsByServiceProvider(
-      parseInt(prestadorId),
+      parseInt(id),
     );
   }
 

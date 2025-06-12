@@ -5,7 +5,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CreateCategoryDto } from './create-category.dto';
 
-@Controller('categorias')
+@Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriasService: CategoriesService) {}
 
@@ -15,7 +15,7 @@ export class CategoriesController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin')
+  @Roles(UserType.ADMIN)
   async criarCategoria(@Body() data: CreateCategoryDto) {
     return this.categoriasService.createCategory(data);
   }

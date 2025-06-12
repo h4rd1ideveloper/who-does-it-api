@@ -19,7 +19,7 @@ export class AdminController {
     return this.adminService.createInvitationToken(tokenDto.validade_dias);
   }
 
-  @Get('estatisticas/geral')
+  @Get('statistics/general')
   async getStatistics() {
     return this.adminService.getStatistics();
   }
@@ -30,7 +30,9 @@ export class AdminController {
   }
 
   @Get('metrics/serviceProvider')
-  async getRecentServiceProviderVisits(@Query('periodo') periodo: string = '7') {
+  async getRecentServiceProviderVisits(
+    @Query('periodo') periodo: string = '7',
+  ) {
     return this.adminService.getRecentServiceProviderVisits(parseInt(periodo));
   }
 }

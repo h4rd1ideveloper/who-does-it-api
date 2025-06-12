@@ -17,11 +17,11 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // obtém o request já tipado
+    // obtém o request já 'tipado'
     const request = context.switchToHttp().getRequest<AuthRequest>();
     const user = request.user; // agora é JwtUser, não any
 
-    // verifica se o tipo do usuário está entre os permitidos
+    // verifica se o tipo do `usuário` está entre os permitidos
     return requiredRoles.includes(user.userType);
   }
 }

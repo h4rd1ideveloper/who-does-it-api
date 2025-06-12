@@ -38,7 +38,7 @@ declare global {
   interface JwtUser {
     id: number;
     email: string;
-    userType: string;
+    userType: UserType;
   }
   /**
    * Extensão de Express. Request para incluir o 'usuário' 'tipado'
